@@ -83,6 +83,10 @@ class MapLocationPicker extends StatefulWidget {
   /// When tap on map decode address callback function
   final Function(GeocodingResult?)? onDecodeAddress;
 
+  /// Callback when a location is selected on the map.
+  /// If you want to skip address decoding and using this callback, please set [avoidDecodeAddress] to true.
+  final Function(Location)? onMapSelected;
+
   /// Show back button (default: true)
   final bool hideBackButton;
 
@@ -179,6 +183,9 @@ class MapLocationPicker extends StatefulWidget {
   /// hide bottom card (default: false)
   final bool hideBottomCard;
 
+  /// Avoid decoding address when tapping the map (default: false)
+  final bool avoidDecodeAddress;
+
   const MapLocationPicker({
     Key? key,
     this.desiredAccuracy = LocationAccuracy.high,
@@ -242,6 +249,8 @@ class MapLocationPicker extends StatefulWidget {
     this.hideMapTypeButton = false,
     this.hideBottomCard = false,
     this.onDecodeAddress,
+    this.onMapSelected,
+    this.avoidDecodeAddress = false,
   }) : super(key: key);
 
   @override
@@ -312,12 +321,11 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
               controller.animateCamera(
                 CameraUpdate.newCameraPosition(cameraPosition()),
               );
-              _decodeAddress(
-                Location(
-                  lat: position.latitude,
-                  lng: position.longitude,
-                ),
+              var location = Location(
+                lat: position.latitude,
+                lng: position.longitude,
               );
+              _handleSelectedMapLocation(location);
               setState(() {});
             },
             onMapCreated: (GoogleMapController controller) =>
@@ -617,5 +625,17 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     } catch (e) {
       logger.e(e);
     }
+  }
+
+  void _handleSelectedMapLocation(Location location) {
+    if (widget.avoidDecodeAddress) {
+      _mapLocationCallback(location);
+    } else {
+      _decodeAddress(location);
+    }
+  }
+
+  void _mapLocationCallback(Location location) {
+    widget.onMapSelected?.call(location);
   }
 }
